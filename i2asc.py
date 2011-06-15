@@ -1,15 +1,12 @@
-def ASCIIify(image_url, max_columns=80, background_is_dark=False):
-    from PIL import Image, ImageOps
-    import csv
-    from bisect import bisect_left
-    import urllib2
-    import cStringIO
+#!/usr/bin/env python
+from PIL import Image, ImageOps
+from bisect import bisect_left
+import urllib2
+import cStringIO
+from optparse import OptionParser
 
-    ##brightness_list = csv.reader(open('brightnesslist.csv', 'rb'), delimiter=',', quotechar='"')
-    ##char_wt = []
-    ##for row in brightness_list:
-    ##    if row[1]!='':
-    ##        char_wt.append({'char': int(row[1]), 'brightness': float(row[3])})
+def ASCIIify(image_url, max_columns=80, background_is_dark=False):
+
     char_wt = [ {'char': 32, 'brightness': 0.0},\
                {'char': 32, 'brightness': 0.0}, {'char': 96, 'brightness': 1.29}, \
                {'char': 46, 'brightness': 2.44}, {'char': 94, 'brightness': 2.96}, \
@@ -59,7 +56,12 @@ def ASCIIify(image_url, max_columns=80, background_is_dark=False):
                {'char': 35, 'brightness': 13.37}, {'char': 66, 'brightness': 13.37},\
                {'char': 78, 'brightness': 13.5}, {'char': 87, 'brightness': 14.91},\
                {'char': 77, 'brightness': 15.36}]
-    imfile = urllib2.urlopen(image_url)
+
+    # If no protocol specifier, assume a local file
+    if '://' not in image_url:
+        imfile = open(image_url)
+    else:
+        imfile = urllib2.urlopen(image_url)
     img = cStringIO.StringIO(imfile.read())
     im = Image.open(img)
     max_rows = int(0.3 * max_columns);  # as a result of the 8x5 dimensions of the character bounding box
@@ -115,8 +117,26 @@ def ASCIIify(image_url, max_columns=80, background_is_dark=False):
     return ascii_art
 
 if __name__ == '__main__':
-    # This picture looks horrible both ways
-    print "Dark Background:"
-    print ASCIIify('http://www.tothebe.at/files/saxbig.gif', 120, True)
-    print "Light Background:"
-    print ASCIIify('http://www.tothebe.at/files/saxbig.gif', 120, False)
+    # Our command line arguments
+    cmd = OptionParser(usage = "usage: %prog [options] <image url>",
+        description = "Converts images to ASCII.  Output goes to stdout. "
+        "<image url> can be a fully qualified URL or a local filename.")
+    cmd.add_option("-l", "--light",  dest="light", default=False,
+                    action="store_true",
+                    help="generate output with a light background")
+    cmd.add_option("-c", "--columns",  dest="columns", metavar="COLUMNS",
+                    default="80",
+                    help="number of columns in output [default: %default]")
+    (options,  args) = cmd.parse_args()
+
+    # Got enough args?
+    if len(args) != 1:
+        cmd.error("Incorrect number of arguments")
+
+    # Got sane columns?
+    if options.columns.isdigit():
+        options.columns = int(options.columns)
+    else:
+        cmd.error("Columns must be an integer")
+
+    print ASCIIify(args[0], options.columns, not options.light)

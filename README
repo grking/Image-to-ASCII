@@ -1,0 +1,12 @@
+Usage: i2asc.py [options] <image url>
+
+Converts images to ASCII.  Output goes to stdout. <image url> can be a fully
+qualified URL or a local filename.
+
+Options:
+  -h, --help            show this help message and exit
+  -l, --light           generate output with a light background
+  -c COLUMNS, --columns=COLUMNS
+                        number of columns in output [default: 80]
+
+
